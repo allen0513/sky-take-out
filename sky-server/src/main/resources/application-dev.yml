@@ -19,3 +19,15 @@ sky:
   wechat:
     appid: wx136f03d07d8f2127
     secret: 03f1682daadb05c62f59274b3061716d
+      # 传智商务号
+    mchid: 1561414331
+      #对应的证书的序列号
+    mchSerialNo: 4B3B3DC35414AD50B1B755BAF8DE9CC7CF407606
+      #    privateKeyFilePath: D:\apiclient_key.pem 私钥文件
+      # 解密秘钥(商户平台设置)
+    apiV3Key: CZBK51236435wxpay435434323FFDuv3
+      #    weChatPayCertFilePath: D:\wechatpay_166D96F876F45C7D07CE98952A96EC980368ACFC.pem 平台证书
+      #支付成功回调 内网穿透临时域名+/notify/paySuccess(Controller层接口)
+    notifyUrl: http://79a7c646.r16.cpolar.top/notify/paySuccess
+      #退款成功回调 内网穿透临时域名+/notify/refundSuccess(Controller层接口)
+    refundNotifyUrl: http://79a7c646.r16.cpolar.top/notify/refundSuccess

@@ -21,6 +21,7 @@ import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.websocket.WebSocketServer;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +52,8 @@ public class OrderServiceImpl implements OrderService {
     private AddressBookMapper addressBookMapper;
     @Autowired
     private WeChatPayUtil weChatPayUtil;
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     @Value("${sky.shop.address}")
     private String shopAddress;
@@ -188,6 +191,15 @@ public class OrderServiceImpl implements OrderService {
 
         orderMapper.updateStatus(OrderStatus, OrderPaidStatus, check_out_time, orderId);
 
+        //通过webSocketServer向客户端浏览器推送来单提醒
+        Map map = new HashMap();
+        map.put("type",1);//1表示来单提醒,2表示客户催单
+        map.put("orderId",orderId);
+        map.put("content","订单号：" + ordersPaymentDTO.getOrderNumber());
+
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
+
         return vo;
 
     }
@@ -211,6 +223,14 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+        //通过webSocketServer向客户端浏览器推送消息
+        Map map = new HashMap();
+        map.put("type",1);//1表示来单提醒,2表示客户催单
+        map.put("orderId",ordersDB.getId());
+        map.put("content","订单号：" + outTradeNo);
+
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
 
 
@@ -457,12 +477,16 @@ public class OrderServiceImpl implements OrderService {
         Integer payStatus = ordersDB.getPayStatus();
         if (payStatus == Orders.PAID) {
             //用户已支付，需要退款
-            String refund = weChatPayUtil.refund(
-                    ordersDB.getNumber(),
-                    ordersDB.getNumber(),
-                    new BigDecimal(0.01),
-                    new BigDecimal(0.01));
-            log.info("申请退款：{}", refund);
+            try {
+                String refund = weChatPayUtil.refund(
+                        ordersDB.getNumber(),
+                        ordersDB.getNumber(),
+                        new BigDecimal(0.01),
+                        new BigDecimal(0.01));
+                log.info("申请退款：{}", refund);
+            } catch (Exception e) {
+                log.error("微信退款失败：{}", e.getMessage());
+            }
         }
 
         // 拒单需要退款，根据订单id更新订单状态、拒单原因、取消时间
@@ -488,12 +512,16 @@ public class OrderServiceImpl implements OrderService {
         Integer payStatus = ordersDB.getPayStatus();
         if (payStatus == 1) {
             //用户已支付，需要退款
-            String refund = weChatPayUtil.refund(
-                    ordersDB.getNumber(),
-                    ordersDB.getNumber(),
-                    new BigDecimal(0.01),
-                    new BigDecimal(0.01));
-            log.info("申请退款：{}", refund);
+            try {
+                String refund = weChatPayUtil.refund(
+                        ordersDB.getNumber(),
+                        ordersDB.getNumber(),
+                        new BigDecimal(0.01),
+                        new BigDecimal(0.01));
+                log.info("申请退款：{}", refund);
+            } catch (Exception e) {
+                log.error("微信退款失败：{}", e.getMessage());
+            }
         }
 
         // 管理端取消订单需要退款，根据订单id更新订单状态、取消原因、取消时间
