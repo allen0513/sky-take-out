@@ -12,4 +12,22 @@
              #{od.amount}, #{od.image})
         </foreach>
     </insert>
+
+    <select id="getSalesTop10" resultType="java.util.Map">
+        select od.name, sum(od.number) as total
+        from order_detail od
+                 left join orders o on od.order_id = o.id
+        <where>
+            <if test="begin != null">
+                and o.order_time &gt;= #{begin}
+            </if>
+            <if test="end != null">
+                and o.order_time &lt;= #{end}
+            </if>
+            and o.status = 5
+        </where>
+        group by od.name
+        order by total desc
+        limit 10
+    </select>
 </mapper>
